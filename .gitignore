@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+clockcnn/
+
+# Dataset
+dataset/
+
+# Models
+models/
+
+# Results
+results/
+
+# VSCode
+.vscode/
+
+# Windows
+Thumbs.db
+*.Zone.Identifier
