@@ -4,10 +4,21 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+from pathlib import Path
 import matplotlib.pyplot as plt
+import os
 
-train_dir = r"C:\Users\Mou\Desktop\Computer Vision\Clock\train"
-val_dir = r"C:\Users\Mou\Desktop\Computer Vision\Clock\valid"
+BASE_DIR = Path(__file__).resolve().parents[1]
+
+MODEL_DIR = BASE_DIR / "model"
+RESULT_DIR = BASE_DIR / "result"
+
+MODEL_DIR.mkdir(exist_ok=True)
+RESULT_DIR.mkdir(exist_ok=True)
+
+
+train_dir = "/home/mou/Clock_CNN/dataset/train"
+val_dir = "/home/mou/Clock_CNN/dataset/valid"
 
 img_size = (224, 224)
 batch_size = 32
@@ -35,18 +46,32 @@ model = Model(inputs = base_model.input, outputs = output)
 
 model.compile(optimizer = Adam(learning_rate = 0.001), loss = 'categorical_crossentropy', metrics = ['accuracy'])
 
-history = model.fit(train_data, validation_data = val_data, epochs = 10)
+history = model.fit(train_data, validation_data = val_data, epochs = 20)
 
-model.save("mobilenetv2_clock_stage1.keras")
+model.save(MODEL_DIR / "mobilenetv2_clock_stage1.keras")
 
-plt.plot(history.history["accuracy"], label="train accuracy")
-plt.plot(history.history["val_accuracy"], label="val accuracy")
+os.makedirs("RESULT_DIR", exist_ok=True)
+
+# Accuracy
+plt.figure(figsize=(8,5))
+plt.plot(history.history["accuracy"], label="Train Accuracy")
+plt.plot(history.history["val_accuracy"], label="Validation Accuracy")
+plt.xlabel("Epoch")
+plt.ylabel("Accuracy")
 plt.legend()
-plt.savefig("accuracy.png")
-plt.show()
+plt.grid(True)
 
-plt.plot(history.history["loss"], label="train loss")
-plt.plot(history.history["val_loss"], label="val loss")
+plt.savefig(RESULT_DIR / "accuracy.png", dpi=300)
+plt.close()
+
+# Loss
+plt.figure(figsize=(8,5))
+plt.plot(history.history["loss"], label="Train Loss")
+plt.plot(history.history["val_loss"], label="Validation Loss")
+plt.xlabel("Epoch")
+plt.ylabel("Loss")
 plt.legend()
-plt.savefig("loss.png")
-plt.show()
+plt.grid(True)
+
+plt.savefig(RESULT_DIR / "loss.png", dpi=300)
+plt.close()
