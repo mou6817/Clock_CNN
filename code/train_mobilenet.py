@@ -4,9 +4,11 @@ from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import Dense, GlobalAveragePooling2D, Dropout
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.callbacks import ModelCheckpoint
 from pathlib import Path
 import matplotlib.pyplot as plt
 import os
+import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -28,12 +30,12 @@ train_gen = ImageDataGenerator( rescale = 1./255, rotation_range = 15,
                                 zoom_range = 0.1, width_shift_range = 0.1, 
                                 height_shift_range = 0.1)
 
-val_gen = ImageDataGenerator(rescale=1./255)
+val_gen = ImageDataGenerator(rescale=1./255) 
 
 train_data = train_gen.flow_from_directory(train_dir, target_size = img_size,
                                            batch_size = batch_size, class_mode = 'categorical')
 val_data = val_gen.flow_from_directory(val_dir, target_size = img_size,
-                                       batch_size = batch_size, class_mode = 'categorical')
+                                       batch_size = batch_size, class_mode = 'categorical', shuffle=False)
 
 base_model = MobileNetV2(input_shape = (224, 224, 3), include_top = False, weights = 'imagenet')
 
@@ -46,11 +48,27 @@ model = Model(inputs = base_model.input, outputs = output)
 
 model.compile(optimizer = Adam(learning_rate = 0.001), loss = 'categorical_crossentropy', metrics = ['accuracy'])
 
-history = model.fit(train_data, validation_data = val_data, epochs = 20)
+checkpoint = ModelCheckpoint("model/mobilenetv2_clock_best.keras",
+                             monitor = "val_accuracy", save_best_only = True,
+                             mode = "max", verbose = 1) # 把Accuracy最高的模型存進去
 
-model.save(MODEL_DIR / "mobilenetv2_clock_stage1.keras")
+history = model.fit(train_data, validation_data = val_data, epochs = 20, callbacks = [checkpoint])
 
-os.makedirs("RESULT_DIR", exist_ok=True)
+print("\n============== Final Epoch ==================")
+print(f"Train Accuracy : {history.history['accuracy'][-1]:.4f}")
+print(f"Validation Accuracy : {history.history['val_accuracy'][-1]:.4f}")
+print(f"Train Loss : {history.history['loss'][-1]:.4f}")
+print(f"Validation Loss : {history.history['val_loss'][-1]:.4f}")
+
+best_epoch = np.argmax(history.history["val_accuracy"])
+
+print("\n========== Best Model ==========")
+print(f"Best Epoch : {best_epoch + 1}")
+print(f"Train Accuracy : {history.history['accuracy'][best_epoch]:.4f}")
+print(f"Validation Accuracy : {history.history['val_accuracy'][best_epoch]:.4f}")
+print(f"Train Loss : {history.history['loss'][best_epoch]:.4f}")
+print(f"Validation Loss : {history.history['val_loss'][best_epoch]:.4f}")
+
 
 # Accuracy
 plt.figure(figsize=(8,5))
