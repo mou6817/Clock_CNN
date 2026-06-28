@@ -29,80 +29,78 @@ model = load_model("model/mobilenetv2_clock_best.keras")
 pred = model.predict(test_data)
 pred_index = np.argmax(pred, axis = 1)
 true_index = test_data.classes
-for layer in model.layers:
-    print(layer.name)
 
-# index_to_class = {v:k for k, v in test_data.class_indices.items()}
+index_to_class = {v:k for k, v in test_data.class_indices.items()}
 
-# # for i in range(20):
-# #     true_label = index_to_class[true_index[i]]
-# #     pred_label = index_to_class[pred_index[i]]
-# #     confidence = np.max(pred[i])
-
-# #     print(f"True Label: {true_label}, Predicted Label: {pred_label}, Confidence: {confidence:.4f}")
-
-# wrong = np.where(pred_index != true_index)[0]
-
-# confusion_count = defaultdict(int)
-# confusion_confidence = defaultdict(list)
-
-# for i in wrong:
+# for i in range(20):
 #     true_label = index_to_class[true_index[i]]
 #     pred_label = index_to_class[pred_index[i]]
-
-#     pair = (true_label, pred_label)
-
 #     confidence = np.max(pred[i])
-#     filename = test_data.filenames[i]
 
-#     print(f"Filename: {filename}, True Label: {true_label}, Predicted Label: {pred_label}, Confidence: {confidence:.4f}")
+#     print(f"True Label: {true_label}, Predicted Label: {pred_label}, Confidence: {confidence:.4f}")
 
-#     confusion_count[pair] += 1
-#     confusion_confidence[pair].append(confidence)
+wrong = np.where(pred_index != true_index)[0]
 
-# from collections import Counter
+confusion_count = defaultdict(int)
+confusion_confidence = defaultdict(list)
 
-# # 找出所有錯誤案例的「真實類別 -> 預測類別」
-# wrong_pairs = []
+for i in wrong:
+    true_label = index_to_class[true_index[i]]
+    pred_label = index_to_class[pred_index[i]]
 
-# for i in range(len(true_index)):
-#     if pred_index[i] != true_index[i]:
-#         true_label = index_to_class[true_index[i]]
-#         pred_label = index_to_class[pred_index[i]]
-#         wrong_pairs.append((true_label, pred_label))
+    pair = (true_label, pred_label)
 
-# # 統計最常出現的混淆組合
-# confusion_count = Counter(wrong_pairs)
+    confidence = np.max(pred[i])
+    filename = test_data.filenames[i]
 
-# print("\n========== Top 5 Deserved Analysis ==========")
+    print(f"Filename: {filename}, True Label: {true_label}, Predicted Label: {pred_label}, Confidence: {confidence:.4f}")
 
-# top5 = sorted(confusion_count.items(), key = lambda x:x[1], reverse = True)[:5]
+    confusion_count[pair] += 1
+    confusion_confidence[pair].append(confidence)
 
-# for rank, ((true_label, pred_label), count) in enumerate(top5, start=1):
-#     avg_confidence = np.mean(confusion_confidence[(true_label, pred_label)])
-#     print(f"{rank}. True: {true_label} -> Predicted: {pred_label}, Count: {count}, Confidence: {avg_confidence:.4f}")
+from collections import Counter
 
-# acc = np.mean(pred_index == true_index)
-# print(f"Test Accuracy: {acc*100:.2f}%")
-# print(f"Total Samples: {len(true_index)}, Wrong Predictions: {len(wrong)}")
+# 找出所有錯誤案例的「真實類別 -> 預測類別」
+wrong_pairs = []
+
+for i in range(len(true_index)):
+    if pred_index[i] != true_index[i]:
+        true_label = index_to_class[true_index[i]]
+        pred_label = index_to_class[pred_index[i]]
+        wrong_pairs.append((true_label, pred_label))
+
+# 統計最常出現的混淆組合
+confusion_count = Counter(wrong_pairs)
+
+print("\n========== Top 5 Deserved Analysis ==========")
+
+top5 = sorted(confusion_count.items(), key = lambda x:x[1], reverse = True)[:5]
+
+for rank, ((true_label, pred_label), count) in enumerate(top5, start=1):
+    avg_confidence = np.mean(confusion_confidence[(true_label, pred_label)])
+    print(f"{rank}. True: {true_label} -> Predicted: {pred_label}, Count: {count}, Confidence: {avg_confidence:.4f}")
+
+acc = np.mean(pred_index == true_index)
+print(f"Test Accuracy: {acc*100:.2f}%")
+print(f"Total Samples: {len(true_index)}, Wrong Predictions: {len(wrong)}")
 
 
-# class_accuracy = []
+class_accuracy = []
 
-# for class_idx, class_name in index_to_class.items():
+for class_idx, class_name in index_to_class.items():
 
-#     # 找出屬於這個類別的所有圖片
-#     mask = (true_index == class_idx)
+    # 找出屬於這個類別的所有圖片
+    mask = (true_index == class_idx)
 
-#     total = np.sum(mask)
+    total = np.sum(mask)
 
-#     correct = np.sum(pred_index[mask] == true_index[mask])
+    correct = np.sum(pred_index[mask] == true_index[mask])
 
-#     acc = correct / total
+    acc = correct / total
 
-#     class_accuracy.append((class_name, acc, correct, total))
+    class_accuracy.append((class_name, acc, correct, total))
 
-# print("\n========== Top 10 Lowest Accuracy ==========")
-# class_accuracy.sort(key=lambda x: x[1])
-# for rank, (class_name, acc, correct, total) in enumerate(class_accuracy[:10], start=1):
-#     print(f"{rank}. {class_name} : {acc*100:.2f}% ({correct}/{total})")
+print("\n========== Top 10 Lowest Accuracy ==========")
+class_accuracy.sort(key=lambda x: x[1])
+for rank, (class_name, acc, correct, total) in enumerate(class_accuracy[:10], start=1):
+    print(f"{rank}. {class_name} : {acc*100:.2f}% ({correct}/{total})")
